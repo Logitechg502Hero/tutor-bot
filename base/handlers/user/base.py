@@ -1,7 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 
 from base.states.user import UserStates
 
@@ -122,3 +122,13 @@ async def buy_posts_handler(callback: CallbackQuery, state: FSMContext):
 @router.message(Command('id'))
 async def id_handler(message: Message):
     await message.answer(f'Ваш телеграм ID: {message.from_user.id}')
+
+
+@router.message(StateFilter(None))
+async def any_message_handler(message: Message, state: FSMContext):
+    user = vars.database.get_user(message.from_user.id)
+    if not user:
+        await message.answer(user_texts.start_text)
+        await message.answer(user_texts.input_role_text, reply_markup=user_markups.role_kb)
+    else:
+        await message.answer(user_texts.main_menu_text, reply_markup=user_markups.main_kb)
