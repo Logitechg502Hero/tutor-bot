@@ -40,11 +40,18 @@ put_request_kb = InlineKeyboardMarkup(inline_keyboard=[
 
 main_kb = InlineKeyboardMarkup(inline_keyboard=[
     [profile_btn],
+    [want_to_put_request_btn],
     [buy_posts_btn]
 ])
 
 cancel_kb = InlineKeyboardMarkup(inline_keyboard=[
     [cancel_btn]
+])
+
+profile_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [want_to_put_request_btn],
+    [change_btn],
+    [main_menu_btn]
 ])
 
 change_kb = InlineKeyboardMarkup(inline_keyboard=[

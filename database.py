@@ -1,10 +1,11 @@
 import sqlite3
+import os
 from typing import Any
 from datetime import datetime
 
 from logger_config import logger
 
-DB_PATH = 'tutor_bot.db'
+DB_PATH = os.getenv('DB_PATH', 'tutor_bot.db')
 
 
 class Database:
