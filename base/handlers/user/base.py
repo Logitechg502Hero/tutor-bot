@@ -9,6 +9,7 @@ from datetime import datetime
 
 from base.visual.markups import user as user_markups
 from base.visual.texts import user as user_texts
+from utils import user_text as user_text_utils
 
 import vars
 import auto_moderator
@@ -19,6 +20,18 @@ from logger_config import logger
 router = Router()
 
 
+async def _show_profile(message: Message):
+    user = vars.database.get_user(message.from_user.id)
+    role = user['role']
+    user_data = vars.database.get_tutor_data(message.from_user.id) if role == 'tutor' else vars.database.get_tutee_data(message.from_user.id)
+    text = user_text_utils.user_questionnaire_text(user, user_data)
+    photo_id = user_data.get('photo_path') if role == 'tutor' else None
+    if photo_id:
+        await message.answer_photo(photo=photo_id, caption=text, reply_markup=user_markups.profile_kb)
+    else:
+        await message.answer(text, reply_markup=user_markups.profile_kb)
+
+
 @router.message(Command('start'))
 async def start_handler(message: Message, state: FSMContext):
     await state.clear()
@@ -27,7 +40,7 @@ async def start_handler(message: Message, state: FSMContext):
         await message.answer(user_texts.start_text)
         await message.answer(user_texts.input_role_text, reply_markup=user_markups.role_kb)
     else:
-        await message.answer(user_texts.main_menu_text, reply_markup=user_markups.main_kb)
+        await _show_profile(message)
 
 
 @router.callback_query(F.data == 'cancel')
@@ -137,4 +150,4 @@ async def any_message_handler(message: Message, state: FSMContext):
         await message.answer(user_texts.start_text)
         await message.answer(user_texts.input_role_text, reply_markup=user_markups.role_kb)
     else:
-        await message.answer(user_texts.main_menu_text, reply_markup=user_markups.main_kb)
+        await _show_profile(message)
