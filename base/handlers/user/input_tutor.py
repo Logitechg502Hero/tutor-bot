@@ -120,6 +120,5 @@ async def input_price_handler(message: Message, state: FSMContext, bot: Bot):
         price=price
     )
 
-    await message.answer(user_texts.questionnaire_filled_text, reply_markup=user_markups.main_kb)
-    await vars.post_scheduler.send_want_to_put_request_message(message.from_user.id)
+    await message.answer(user_texts.questionnaire_filled_text, reply_markup=user_markups.after_registration_kb)
     await state.clear()

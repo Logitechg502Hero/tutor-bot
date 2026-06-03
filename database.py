@@ -12,6 +12,9 @@ class Database:
 
     def __init__(self, db_path: str = DB_PATH) -> None:
         self._path = db_path
+        db_dir = os.path.dirname(db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
         self._session = sqlite3.connect(self._path, check_same_thread=False)
         self._session.row_factory = sqlite3.Row
         self._session.execute('PRAGMA foreign_keys = ON')

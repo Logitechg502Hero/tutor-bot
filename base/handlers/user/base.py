@@ -110,11 +110,17 @@ async def payment_screenshot_handler(message: Message, state: FSMContext):
     logger.info(f'Payment screenshot received from user {user_id}')
 
 
+@router.callback_query(F.data == 'paidLinkInfo')
+async def paid_link_info_handler(callback: CallbackQuery):
+    await callback.message.answer(user_texts.paid_link_info_text, reply_markup=user_markups.main_kb)
+    await callback.answer(show_alert=False)
+
+
 @router.callback_query(F.data == 'buyPosts')
 async def buy_posts_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.answer(
-        user_texts.buy_posts_text.format(admin=vars.ADMIN_USERNAME), 
+        user_texts.buy_posts_text.format(admin=vars.ADMIN_USERNAME),
         reply_markup=user_markups.main_kb
     )
 
