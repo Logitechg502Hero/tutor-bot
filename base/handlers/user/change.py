@@ -78,9 +78,7 @@ async def change_value_handler(message: Message, state: FSMContext, bot: Bot):
         value = ', '.join(split.split_subject(value))
 
     if field == 'photo_path':
-        file = await bot.get_file(message.photo[-1].file_id)
-        value = f'{constants.profile_pictures_path}{message.from_user.id}.jpg'
-        await bot.download_file(file.file_path, value)
+        value = message.photo[-1].file_id
 
     vars.database.update_user(message.from_user.id, field, value, role)
 

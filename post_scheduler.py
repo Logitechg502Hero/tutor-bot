@@ -5,7 +5,6 @@ from asyncio import AbstractEventLoop
 from datetime import datetime, timedelta
 
 from aiogram import Bot
-from aiogram.types import FSInputFile
 from database import Database
 
 from base.visual.texts import user as user_texts
@@ -25,7 +24,6 @@ class PostScheduler:
         self.scheduler = AsyncIOScheduler(event_loop=self.loop)
         self.scheduler.add_job(self._approved_post_checker, 'cron', hour=12, minute=0)
         self.scheduler.add_job(self._approved_post_checker, 'cron', hour=19, minute=0)
-        self.scheduler.add_job(self._approved_post_checker, 'interval', seconds=10, next_run_time=datetime.now())
         self.scheduler.add_job(self._check_users_for_new_requests, 'interval', minutes=10)
         self.scheduler.add_job(self._check_scheduled_posts, 'interval', minutes=1, next_run_time=datetime.now())
         self.scheduler.start()
@@ -56,7 +54,7 @@ class PostScheduler:
             method = self._bot.send_photo
             kwargs = {
                 'chat_id': self.chat_id,
-                'photo': FSInputFile(user_data.get('photo_path')),
+                'photo': user_data.get('photo_path'),
                 'caption': user_text
             }
         try:

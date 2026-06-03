@@ -31,6 +31,6 @@ database = Database()
 properties = DefaultBotProperties(parse_mode='HTML')
 bot = Bot(BOT_TOKEN, default=properties)
 
-CHAT_ID = os.getenv('chat_id')
+CHAT_ID = int(os.getenv('chat_id'))
 
 post_scheduler = PostScheduler(database, bot, CHAT_ID, loop)

@@ -43,9 +43,7 @@ async def input_age_handler(message: Message, state: FSMContext):
 
 @router.message(UserStates.input_photo, F.photo)
 async def input_photo_handler(message: Message, state: FSMContext, bot: Bot):
-    file = await bot.get_file(message.photo[-1].file_id)
-    path = file.file_path
-    await state.update_data(photo=path)
+    await state.update_data(photo=message.photo[-1].file_id)
     await message.answer(user_texts.input_subject_text)
     await state.set_state(UserStates.input_subject)
 
@@ -109,17 +107,12 @@ async def input_price_handler(message: Message, state: FSMContext, bot: Bot):
     contacts = data['contacts']
     price = float(message.text)
 
-    dest_path = None
-    if photo:
-        dest_path = f'{constants.profile_pictures_path}{message.from_user.id}.jpg'
-        await bot.download_file(photo, dest_path)
-
     vars.database.create_user(
         user_id=message.from_user.id,
         role='tutor',
         name=name,
         age=age,
-        photo_path=dest_path,
+        photo_path=photo,
         subject=subject,
         experience=experience,
         info=info,

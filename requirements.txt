@@ -2,6 +2,4 @@ aiogram
 aiogram-dialog
 loguru
 python-dotenv
-psycopg
-psycopg-binary
 apscheduler
