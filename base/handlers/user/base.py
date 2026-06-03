@@ -67,7 +67,7 @@ async def put_request_handler(callback: CallbackQuery, state: FSMContext):
             f'В вашей анкете есть ссылка на внешний ресурс.\n\n'
             f'Размещение ссылки стоит <b>300 руб.</b>\n\n'
             f'Переведите на номер <b>+79857770845</b> (Тинькофф)\n'
-            f'с комментарием: <code>ссылка @{callback.from_user.username or user_id}</code>\n\n'
+            f'с комментарием: <code>репетитор {user_id}</code>\n\n'
             f'Затем нажмите кнопку ниже и пришлите скриншот оплаты.',
             reply_markup=user_markups.paid_link_kb,
             parse_mode='HTML'
