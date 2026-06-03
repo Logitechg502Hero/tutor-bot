@@ -3,3 +3,4 @@ aiogram-dialog
 loguru
 python-dotenv
 apscheduler
+aiohttp
