@@ -22,7 +22,7 @@ cancel_payment_btn = InlineKeyboardButton(text='🗑 Убрать ссылку �
 
 change_name_btn = InlineKeyboardButton(text='Имя', callback_data='change/name')
 change_age_btn = InlineKeyboardButton(text='Возраст', callback_data='change/age')
-change_photo_btn = InlineKeyboardButton(text='Фото', callback_data='change/photo_path')
+change_photo_btn = InlineKeyboardButton(text='Фото', callback_data='change/photo_file_id')
 change_subject_btn = InlineKeyboardButton(text='Предмет', callback_data='change/subject')
 change_experience_btn = InlineKeyboardButton(text='Опыт', callback_data='change/experience')
 change_info_btn = InlineKeyboardButton(text='О себе', callback_data='change/info')

@@ -1,15 +1,11 @@
-from aiogram import Router, F, Bot
+from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from base.states.user import UserStates
-
 from base.visual.texts import user as user_texts
 from base.visual.markups import user as user_markups
-
 from utils import validate, split
-
-import constants
 
 import vars
 
@@ -19,6 +15,7 @@ router = Router()
 
 @router.callback_query(F.data == 'student')
 async def input_role_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer(user_texts.tutee_onboarding_text)
     await callback.message.answer(user_texts.input_name_text)
     await state.set_state(UserStates.tutee_input_name)
     await callback.answer(show_alert=False)
@@ -37,7 +34,7 @@ async def input_age_handler(message: Message, state: FSMContext):
         await message.answer(user_texts.invalid_age_text)
         return
     await state.update_data(age=int(message.text))
-    await message.answer(user_texts.tutee_input_subject)
+    await message.answer(user_texts.tutee_input_subject, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_subject)
 
 
@@ -69,33 +66,23 @@ async def input_price_handler(message: Message, state: FSMContext):
         await message.answer(user_texts.invalid_price_text)
         return
     await state.update_data(price=float(message.text))
-    await message.answer(user_texts.input_contacts_text)
+    await message.answer(user_texts.input_contacts_text, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_contacts)
 
 
 @router.message(UserStates.tutee_input_contacts, F.text)
-async def input_contacts_handler(message: Message, state: FSMContext, bot: Bot):
-
+async def input_contacts_handler(message: Message, state: FSMContext):
     data = await state.get_data()
-    name = data['name']
-    age = data['age']
-    subject = data['subject']
-    place = data['place']
-    target = data['target']
-    contacts = message.text
-    price = data['price']
-
-    vars.database.create_user(
+    await vars.database.create_user(
         user_id=message.from_user.id,
         role='tutee',
-        name=name,
-        age=age,
-        subject=subject,
-        place=place,
-        target=target,
-        contacts=contacts,
-        price=price
+        name=data['name'],
+        age=data['age'],
+        subject=data['subject'],
+        place=data['place'],
+        target=data['target'],
+        contacts=message.text,
+        price=data['price']
     )
-
     await message.answer(user_texts.questionnaire_filled_text, reply_markup=user_markups.after_registration_kb)
     await state.clear()

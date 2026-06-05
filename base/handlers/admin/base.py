@@ -2,14 +2,11 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
-
 from aiogram_dialog import DialogManager, StartMode
 
 from base.handlers.admin.requests_dialogs.states import RequestsStates
-
 from base.visual.markups import admin as admin_markups
 from base.visual.markups import user as user_markups
-
 from filters import AdminFilter
 
 
@@ -30,6 +27,20 @@ async def users_menu(message: Message, state: FSMContext):
     await message.answer('Режим пользователя', reply_markup=user_markups.main_with_admin_kb)
 
 
+@router.callback_query(F.data == 'main')
+async def main_menu(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.answer('Выберите действие', reply_markup=admin_markups.main_kb)
+    await callback.answer(show_alert=False)
+
+
+@router.callback_query(F.data == 'requests')
+async def requests_menu(callback: CallbackQuery, state: FSMContext, dialog_manager: DialogManager):
+    await state.clear()
+    await callback.answer(show_alert=False)
+    await dialog_manager.start(RequestsStates.main, mode=StartMode.RESET_STACK)
+
+
 @router.callback_query(F.data == 'userMode')
 async def user_mode(callback: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -42,19 +53,6 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.answer('Выберите действие', reply_markup=admin_markups.main_kb)
     await callback.answer(show_alert=False)
-
-
-@router.callback_query(F.data == 'main')
-async def main_menu(callback: CallbackQuery, state: FSMContext):
-    await state.clear()
-    await callback.message.answer('Выберите действие', reply_markup=admin_markups.main_kb)
-
-
-@router.callback_query(F.data == 'requests')
-async def requests_menu(callback: CallbackQuery, state: FSMContext, dialog_manager: DialogManager):
-    await state.clear()
-    await callback.answer(show_alert=False)
-    await dialog_manager.start(RequestsStates.main, mode=StartMode.RESET_STACK)
 
 
 @router.message(Command('make_request'))

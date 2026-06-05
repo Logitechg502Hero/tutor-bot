@@ -1,18 +1,14 @@
-from aiogram import Router, F, Bot
+from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
-
 from datetime import datetime
 
 import utils.validate as validate
 import utils.split as split
 
 from base.states.user import UserStates
-
 from base.visual.texts import user as user_texts
 from base.visual.markups import user as user_markups
-
-import constants
 
 import vars
 
@@ -22,14 +18,11 @@ router = Router()
 
 @router.callback_query(F.data == 'change')
 async def change_menu_handler(callback: CallbackQuery, state: FSMContext):
-    user = vars.database.get_user(callback.from_user.id)
-    if user['role'] == 'tutor':
-        kb = user_markups.make_change_kb(True)
-    else:
-        kb = user_markups.make_change_kb(False)
+    user = await vars.database.get_user(callback.from_user.id)
+    kb = user_markups.make_change_kb(user['role'] == 'tutor')
     await callback.message.answer(user_texts.change_menu_text, reply_markup=kb)
     await callback.answer(show_alert=False)
-    
+
 
 @router.callback_query(F.data.startswith('change/'))
 async def change_handler(callback: CallbackQuery, state: FSMContext):
@@ -40,18 +33,16 @@ async def change_handler(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(UserStates.change_value)
-async def change_value_handler(message: Message, state: FSMContext, bot: Bot):
-    
+async def change_value_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     field = data['field']
 
-    if field != 'photo_path' and message.text is None:
+    if field != 'photo_file_id' and message.text is None:
         return
-    if field == 'photo_path' and message.photo is None:
+    if field == 'photo_file_id' and message.photo is None:
         return
-    
-    value = message.text
 
+    value = message.text
     validate_status = True
     error_text = None
 
@@ -72,23 +63,22 @@ async def change_value_handler(message: Message, state: FSMContext, bot: Bot):
     if not validate_status:
         await message.answer(error_text)
         return
-    
-    user = vars.database.get_user(message.from_user.id)
+
+    user = await vars.database.get_user(message.from_user.id)
     role = user['role']
 
     if field == 'subject':
         value = ', '.join(split.split_subject(value))
-
-    if field == 'photo_path':
+    if field == 'photo_file_id':
         value = message.photo[-1].file_id
 
     user_id = message.from_user.id
-    vars.database.update_user(user_id, field, value, role)
+    await vars.database.update_user(user_id, field, value, role)
 
     repost = False
     for status in ('finished', 'approved'):
-        if vars.database.get_request(user_id, status):
-            vars.database.upsert_request(user_id, datetime.now(), 'pending')
+        if await vars.database.get_request(user_id, status):
+            await vars.database.upsert_request(user_id, datetime.now(), 'pending')
             repost = True
             break
 

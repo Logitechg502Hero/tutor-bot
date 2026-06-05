@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command, CommandObject
 
@@ -12,8 +12,7 @@ router = Router()
 
 @router.message(Command('admin'))
 async def connect_admin(message: Message, command: CommandObject):
-
     if command.args == vars.BOT_PASSWORD:
-        vars.database.add_admin(message.from_user.id)
+        await vars.database.add_admin(message.from_user.id)
         vars.admin_ids.add(message.from_user.id)
         await message.answer('Добро пожаловать!', reply_markup=admin_markups.main_kb)

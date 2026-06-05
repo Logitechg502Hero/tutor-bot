@@ -24,3 +24,6 @@ class UserStates(StatesGroup):
 
     confirm_request = State()
     awaiting_payment_screenshot = State()
+
+    review_rating = State()
+    review_comment = State()

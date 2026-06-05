@@ -2,76 +2,76 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command, StateFilter
-
-from base.states.user import UserStates
-
 from datetime import datetime
 
+from base.states.user import UserStates
 from base.visual.markups import user as user_markups
 from base.visual.texts import user as user_texts
 from utils import user_text as user_text_utils
 
 import vars
 import auto_moderator
-
 from logger_config import logger
 
 
 router = Router()
 
 
-async def _show_profile(message: Message):
-    user = vars.database.get_user(message.from_user.id)
-    role = user['role']
-    user_data = vars.database.get_tutor_data(message.from_user.id) if role == 'tutor' else vars.database.get_tutee_data(message.from_user.id)
-    text = user_text_utils.user_questionnaire_text(user, user_data)
-    photo_id = user_data.get('photo_path') if role == 'tutor' else None
-    if photo_id:
-        await message.answer_photo(photo=photo_id, caption=text, reply_markup=user_markups.profile_kb)
-    else:
-        await message.answer(text, reply_markup=user_markups.profile_kb)
+async def _main_menu_text(user_id: int) -> str:
+    user = await vars.database.get_user(user_id)
+    if user:
+        role = user['role']
+        data = await vars.database.get_tutor_data(user_id) if role == 'tutor' else await vars.database.get_tutee_data(user_id)
+        name = data.get('name') if data else None
+        if name:
+            return user_texts.main_menu_text.format(name=name)
+    return user_texts.main_menu_text_default
 
 
 @router.message(Command('start'))
 async def start_handler(message: Message, state: FSMContext):
     await state.clear()
-    user = vars.database.get_user(message.from_user.id)
+    user = await vars.database.get_user(message.from_user.id)
     if not user:
         await message.answer(user_texts.start_text)
         await message.answer(user_texts.input_role_text, reply_markup=user_markups.role_kb)
     else:
-        await _show_profile(message)
+        text = await _main_menu_text(message.from_user.id)
+        await message.answer(text, reply_markup=user_markups.main_kb)
 
 
 @router.callback_query(F.data == 'cancel')
 async def cancel_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.answer(user_texts.cancel_text, reply_markup=user_markups.main_kb)
+    text = await _main_menu_text(callback.from_user.id)
+    await callback.message.answer(text, reply_markup=user_markups.main_kb)
     await callback.answer(show_alert=False)
 
 
 @router.callback_query(F.data == 'mainMenu')
 async def main_menu_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.answer(user_texts.main_menu_text, reply_markup=user_markups.main_kb)
+    text = await _main_menu_text(callback.from_user.id)
+    await callback.message.answer(text, reply_markup=user_markups.main_kb)
     await callback.answer(show_alert=False)
 
 
 @router.callback_query(F.data == 'putRequest')
 async def put_request_handler(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    user = vars.database.get_user(user_id)
+    user = await vars.database.get_user(user_id)
     if user['role'] == 'tutor':
-        user_data = vars.database.get_tutor_data(user_id)
+        user_data = await vars.database.get_tutor_data(user_id)
     else:
-        user_data = vars.database.get_tutee_data(user_id)
+        user_data = await vars.database.get_tutee_data(user_id)
     approved, reason, has_link = auto_moderator.moderate(user, user_data, vars.ADMIN_USERNAME)
     if not approved and not has_link:
         await callback.message.answer(user_texts.request_rejected_text.format(reason=reason), reply_markup=user_markups.main_kb)
         logger.info(f'Request rejected for user {user_id}: {reason}')
         await callback.answer(show_alert=False)
         return
-    preview_text = user_text_utils.user_questionnaire_text(user, user_data)
+    rating = await vars.database.get_tutor_rating(user_id) if user['role'] == 'tutor' else None
+    preview_text = user_text_utils.user_questionnaire_text(user, user_data, rating)
     await state.update_data(approved=approved, has_link=has_link)
     await state.set_state(UserStates.confirm_request)
     await callback.message.answer(
@@ -97,9 +97,9 @@ async def confirm_request_handler(callback: CallbackQuery, state: FSMContext):
             reply_markup=user_markups.paid_link_kb,
             parse_mode='HTML'
         )
-        logger.info(f'Payment requested from user {user_id} for external link')
+        logger.info(f'Payment requested from user {user_id}')
     else:
-        vars.database.upsert_request(user_id, datetime.now(), 'approved')
+        await vars.database.upsert_request(user_id, datetime.now(), 'approved')
         await callback.message.answer('Заявка принята! Скоро ваша анкета будет опубликована.', reply_markup=user_markups.main_kb)
         logger.info(f'Request approved for user {user_id}')
     await callback.answer(show_alert=False)
@@ -123,30 +123,17 @@ async def payment_screenshot_handler(message: Message, state: FSMContext):
         await vars.bot.send_photo(
             admin_id,
             message.photo[-1].file_id,
-            caption=f'💳 Скриншот оплаты за ссылку\nПользователь: {username} (ID: {user_id})\n\n'
-                    f'Проверьте перевод и одобрите заявку в /start → Заявки'
+            caption=f'💳 Скриншот оплаты за ссылку\nПользователь: {username} (ID: {user_id})\n\nПроверьте перевод и одобрите заявку в /start → Заявки'
         )
-    vars.database.upsert_request(user_id, datetime.now(), 'pending')
-    await message.answer(
-        'Скриншот отправлен администратору. Заявка будет рассмотрена в ближайшее время.',
-        reply_markup=user_markups.main_kb
-    )
+    await vars.database.upsert_request(user_id, datetime.now(), 'pending')
+    await message.answer('Скриншот отправлен администратору. Заявка будет рассмотрена в ближайшее время.', reply_markup=user_markups.main_kb)
     logger.info(f'Payment screenshot received from user {user_id}')
-
-
-@router.callback_query(F.data == 'paidLinkInfo')
-async def paid_link_info_handler(callback: CallbackQuery):
-    await callback.message.answer(user_texts.paid_link_info_text, reply_markup=user_markups.main_kb)
-    await callback.answer(show_alert=False)
 
 
 @router.callback_query(F.data == 'buyPosts')
 async def buy_posts_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.answer(
-        user_texts.buy_posts_text.format(admin=vars.ADMIN_USERNAME),
-        reply_markup=user_markups.main_kb
-    )
+    await callback.message.answer(user_texts.buy_posts_text.format(admin=vars.ADMIN_USERNAME), reply_markup=user_markups.main_kb)
 
 
 @router.message(Command('id'))
@@ -156,9 +143,10 @@ async def id_handler(message: Message):
 
 @router.message(StateFilter(None))
 async def any_message_handler(message: Message, state: FSMContext):
-    user = vars.database.get_user(message.from_user.id)
+    user = await vars.database.get_user(message.from_user.id)
     if not user:
         await message.answer(user_texts.start_text)
         await message.answer(user_texts.input_role_text, reply_markup=user_markups.role_kb)
     else:
-        await _show_profile(message)
+        text = await _main_menu_text(message.from_user.id)
+        await message.answer(text, reply_markup=user_markups.main_kb)

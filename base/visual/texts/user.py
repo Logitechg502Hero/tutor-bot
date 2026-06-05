@@ -4,7 +4,17 @@ start_text = (
     'Заполни анкету — она появится в канале <b>@repetitor_msc</b>!'
 )
 
-main_menu_text = '🏠 <b>Главное меню</b>'
+main_menu_text = 'Привет, {name}! 👋\n\nЧто делаем?'
+main_menu_text_default = '🏠 <b>Главное меню</b>'
+
+tutor_onboarding_text = (
+    'Отлично! Сейчас заполним анкету — это займёт 2 минуты.\n\n'
+    'Анкета попадёт в канал и её увидят сотни учеников. Сделаем её привлекательной 💪'
+)
+
+tutee_onboarding_text = (
+    'Хорошо! Заполним заявку — репетиторы из канала увидят её и смогут написать тебе напрямую.'
+)
 
 cancel_text = '✅ Действие отменено.'
 
@@ -47,7 +57,8 @@ questionnaire_text = (
     '⏳ Опыт: {experience} лет\n'
     '💬 О себе: {info}\n\n'
     '📞 Контакты: {contacts}\n'
-    '💰 Стоимость: {price} ₽/час\n\n'
+    '💰 Стоимость: {price} ₽/час\n'
+    '{rating}\n\n'
     '{tags}'
 )
 
@@ -62,7 +73,7 @@ tutee_profile_text = (
     '{tags}'
 )
 
-want_to_put_request_text = '📤 Хотите опубликовать анкету в канале?'
+want_to_put_request_text = 'Анкета готова к публикации! 🚀\n\nПосмотри как она будет выглядеть в канале 👇'
 request_sent_text = '✅ Заявка отправлена!'
 request_rejected_text = '❌ Заявка отклонена.\n\nПричина: {reason}'
 request_already_sent_text = '⚠️ У вас уже есть активная заявка!'

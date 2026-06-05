@@ -1,15 +1,11 @@
-from aiogram import Router, F, Bot
+from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from base.states.user import UserStates
-
 from base.visual.texts import user as user_texts
 from base.visual.markups import user as user_markups
-
 from utils import validate, split
-
-import constants
 
 import vars
 
@@ -19,6 +15,7 @@ router = Router()
 
 @router.callback_query(F.data == 'tutor')
 async def input_role_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer(user_texts.tutor_onboarding_text)
     await callback.message.answer(user_texts.input_name_text)
     await state.set_state(UserStates.input_name)
     await callback.answer(show_alert=False)
@@ -37,21 +34,21 @@ async def input_age_handler(message: Message, state: FSMContext):
         await message.answer(user_texts.invalid_age_text)
         return
     await state.update_data(age=int(message.text))
-    await message.answer(user_texts.input_photo_text, reply_markup=user_markups.skip_kb)
+    await message.answer(user_texts.input_photo_text, reply_markup=user_markups.skip_kb, parse_mode='HTML')
     await state.set_state(UserStates.input_photo)
 
 
 @router.message(UserStates.input_photo, F.photo)
-async def input_photo_handler(message: Message, state: FSMContext, bot: Bot):
-    await state.update_data(photo=message.photo[-1].file_id)
-    await message.answer(user_texts.input_subject_text)
+async def input_photo_handler(message: Message, state: FSMContext):
+    await state.update_data(photo_file_id=message.photo[-1].file_id)
+    await message.answer(user_texts.input_subject_text, parse_mode='HTML')
     await state.set_state(UserStates.input_subject)
 
 
 @router.callback_query(UserStates.input_photo, F.data == 'skip')
 async def skip_photo_handler(callback: CallbackQuery, state: FSMContext):
-    await state.update_data(photo=None)
-    await callback.message.answer(user_texts.input_subject_text)
+    await state.update_data(photo_file_id=None)
+    await callback.message.answer(user_texts.input_subject_text, parse_mode='HTML')
     await state.set_state(UserStates.input_subject)
     await callback.answer(show_alert=False)
 
@@ -80,7 +77,7 @@ async def input_info_handler(message: Message, state: FSMContext):
         await message.answer(user_texts.invalid_info_text)
         return
     await state.update_data(info=message.text)
-    await message.answer(user_texts.input_contacts_text)
+    await message.answer(user_texts.input_contacts_text, parse_mode='HTML')
     await state.set_state(UserStates.input_contacts)
 
 
@@ -92,33 +89,23 @@ async def input_contacts_handler(message: Message, state: FSMContext):
 
 
 @router.message(UserStates.input_price, F.text)
-async def input_price_handler(message: Message, state: FSMContext, bot: Bot):
+async def input_price_handler(message: Message, state: FSMContext):
     if not validate.validate_price(message.text):
         await message.answer(user_texts.invalid_price_text)
         return
-    
     data = await state.get_data()
-    name = data['name']
-    age = data['age']
-    photo = data['photo']
-    subject = data['subject']
-    experience = data['experience']
-    info = data['info']
-    contacts = data['contacts']
-    price = float(message.text)
-
-    vars.database.create_user(
+    await vars.database.create_user(
         user_id=message.from_user.id,
         role='tutor',
-        name=name,
-        age=age,
-        photo_path=photo,
-        subject=subject,
-        experience=experience,
-        info=info,
-        contacts=contacts,
-        price=price
+        name=data['name'],
+        age=data['age'],
+        photo_file_id=data.get('photo_file_id'),
+        subject=data['subject'],
+        experience=data['experience'],
+        info=data['info'],
+        contacts=data['contacts'],
+        price=float(message.text)
     )
-
     await message.answer(user_texts.questionnaire_filled_text, reply_markup=user_markups.after_registration_kb)
+    await vars.post_scheduler.send_want_to_put_request_message(message.from_user.id)
     await state.clear()
