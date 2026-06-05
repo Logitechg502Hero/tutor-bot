@@ -39,6 +39,14 @@ main_kb = InlineKeyboardMarkup(inline_keyboard=[
     [buy_posts_btn],
 ])
 
+main_with_admin_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [profile_btn],
+    [put_request_btn],
+    [paid_link_btn_info],
+    [buy_posts_btn],
+    [InlineKeyboardButton(text='🔧 Админ панель', callback_data='adminPanel')],
+])
+
 after_registration_kb = InlineKeyboardMarkup(inline_keyboard=[
     [put_request_btn],
     [profile_btn],

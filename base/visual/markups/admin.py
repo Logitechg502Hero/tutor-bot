@@ -3,8 +3,10 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 requests_btn = InlineKeyboardButton(text='Заявки', callback_data='requests')
 find_user_btn = InlineKeyboardButton(text='Найти пользователя', callback_data='findUser')
+user_mode_btn = InlineKeyboardButton(text='👤 Режим пользователя', callback_data='userMode')
 
 main_menu_btn = InlineKeyboardButton(text='Главное меню', callback_data='main')
+back_to_admin_btn = InlineKeyboardButton(text='🔧 Админ панель', callback_data='adminPanel')
 
 
 main_menu_kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -13,7 +15,8 @@ main_menu_kb = InlineKeyboardMarkup(inline_keyboard=[
 
 main_kb = InlineKeyboardMarkup(inline_keyboard=[
     [requests_btn],
-    [find_user_btn]
+    [find_user_btn],
+    [user_mode_btn]
     ])
 
 
