@@ -15,7 +15,7 @@ from logger_config import logger
 async def main():
     await vars.database.initialize()
     vars.admin_ids = set(await vars.database.get_admins())
-    vars.main_loop = asyncio.get_event_loop()
+    vars.main_loop = asyncio.get_running_loop()
     vars.post_scheduler = PostScheduler(vars.database, vars.bot, vars.CHAT_ID)
 
     start_dashboard()

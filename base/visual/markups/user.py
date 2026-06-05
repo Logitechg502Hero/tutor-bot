@@ -86,6 +86,11 @@ skip_kb = InlineKeyboardMarkup(inline_keyboard=[
     [skip_btn],
 ])
 
+skip_cancel_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [skip_btn],
+    [cancel_btn],
+])
+
 role_kb = InlineKeyboardMarkup(inline_keyboard=[
     [tutor_btn],
     [student_btn],

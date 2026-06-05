@@ -20,7 +20,10 @@ router = Router()
 async def change_menu_handler(callback: CallbackQuery, state: FSMContext):
     user = await vars.database.get_user(callback.from_user.id)
     kb = user_markups.make_change_kb(user['role'] == 'tutor')
-    await callback.message.answer(user_texts.change_menu_text, reply_markup=kb)
+    try:
+        await callback.message.edit_text(user_texts.change_menu_text, reply_markup=kb)
+    except Exception:
+        await callback.message.answer(user_texts.change_menu_text, reply_markup=kb)
     await callback.answer(show_alert=False)
 
 

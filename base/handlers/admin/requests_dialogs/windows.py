@@ -11,10 +11,9 @@ from .states import RequestsStates
 
 
 requests_window = Window(
-    Const('Заявки'),
-    DynamicMedia(
-        selector='photo'
-    ),
+    Format('📋 Заявки — {current} из {total}', when='requests'),
+    Const('📋 Нет заявок на модерации', when=lambda data, *_: not data.get('requests')),
+    DynamicMedia(selector='photo'),
     List(
         field=Format('{item[user_text]}'),
         id='requests_list',
@@ -25,7 +24,7 @@ requests_window = Window(
         text=Format('{item[0]}'),
         id='choose_select',
         item_id_getter=lambda i: i[1],
-        items=[('Одобрить', 'approved'), ('Отказать', 'declined')],
+        items=[('✅ Одобрить', 'approved'), ('❌ Отказать', 'declined')],
         on_click=controllers.request_action,
         when='requests'
     ),
@@ -36,33 +35,18 @@ requests_window = Window(
         NextPage(scroll='requests_list', text=Const('▶️')),
         LastPage(scroll='requests_list', text=Format('{target_page1} ⏭️'))
     ),
-    Button(
-        text=Const('В главное меню'), 
-        id='back_btn', 
-        on_click=controllers.back_to_main
-    ),
+    Button(text=Const('← Назад'), id='back_btn', on_click=controllers.back_to_main),
     state=RequestsStates.main,
     getter=controllers.requests_getter
-    )
+)
 
 
 reject_reason_window = Window(
     Const('Введите причину отказа'),
-    TextInput(
-        id='reject_reason_input',
-        on_success=controllers.reject_reason_success
-    ),
+    TextInput(id='reject_reason_input', on_success=controllers.reject_reason_success),
     Column(
-        SwitchTo(
-            text=Const('Пропустить'),
-            id='skip_btn',
-            state=RequestsStates.main
-        ),
-        Button(
-            text=Const('В главное меню'), 
-            id='back_btn', 
-            on_click=controllers.back_to_main
-        )
+        SwitchTo(text=Const('Пропустить'), id='skip_btn', state=RequestsStates.main),
+        Button(text=Const('← Главное меню'), id='back_btn', on_click=controllers.back_to_main)
     ),
     state=RequestsStates.reject_reason
 )

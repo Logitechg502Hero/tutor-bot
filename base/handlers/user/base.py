@@ -16,6 +16,8 @@ from logger_config import logger
 
 router = Router()
 
+CANCEL_WORDS = {'отмена', '❌ отмена', '❌отмена', '/cancel', 'cancel'}
+
 
 async def _main_menu_text(user_id: int) -> str:
     user = await vars.database.get_user(user_id)
@@ -28,12 +30,28 @@ async def _main_menu_text(user_id: int) -> str:
     return user_texts.main_menu_text_default
 
 
+async def _edit_or_answer(callback: CallbackQuery, text: str, reply_markup):
+    try:
+        await callback.message.edit_text(text, reply_markup=reply_markup)
+    except Exception:
+        await callback.message.answer(text, reply_markup=reply_markup)
+
+
+@router.message(lambda m: m.text and m.text.lower().strip() in CANCEL_WORDS)
+async def cancel_text_handler(message: Message, state: FSMContext):
+    if await state.get_state() is None:
+        return
+    await state.clear()
+    text = await _main_menu_text(message.from_user.id)
+    await message.answer(text, reply_markup=user_markups.main_kb)
+
+
 @router.message(Command('start'))
 async def start_handler(message: Message, state: FSMContext):
     await state.clear()
     user = await vars.database.get_user(message.from_user.id)
     if not user:
-        await message.answer(user_texts.start_text)
+        await message.answer(user_texts.start_text, parse_mode='HTML')
         await message.answer(user_texts.input_role_text, reply_markup=user_markups.role_kb)
     else:
         text = await _main_menu_text(message.from_user.id)
@@ -44,7 +62,7 @@ async def start_handler(message: Message, state: FSMContext):
 async def cancel_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     text = await _main_menu_text(callback.from_user.id)
-    await callback.message.answer(text, reply_markup=user_markups.main_kb)
+    await _edit_or_answer(callback, text, user_markups.main_kb)
     await callback.answer(show_alert=False)
 
 
@@ -52,7 +70,7 @@ async def cancel_handler(callback: CallbackQuery, state: FSMContext):
 async def main_menu_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     text = await _main_menu_text(callback.from_user.id)
-    await callback.message.answer(text, reply_markup=user_markups.main_kb)
+    await _edit_or_answer(callback, text, user_markups.main_kb)
     await callback.answer(show_alert=False)
 
 
@@ -133,7 +151,9 @@ async def payment_screenshot_handler(message: Message, state: FSMContext):
 @router.callback_query(F.data == 'buyPosts')
 async def buy_posts_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.answer(user_texts.buy_posts_text.format(admin=vars.ADMIN_USERNAME), reply_markup=user_markups.main_kb)
+    text = user_texts.buy_posts_text.format(admin=vars.ADMIN_USERNAME)
+    await _edit_or_answer(callback, text, user_markups.main_kb)
+    await callback.answer(show_alert=False)
 
 
 @router.message(Command('id'))
@@ -145,7 +165,7 @@ async def id_handler(message: Message):
 async def any_message_handler(message: Message, state: FSMContext):
     user = await vars.database.get_user(message.from_user.id)
     if not user:
-        await message.answer(user_texts.start_text)
+        await message.answer(user_texts.start_text, parse_mode='HTML')
         await message.answer(user_texts.input_role_text, reply_markup=user_markups.role_kb)
     else:
         text = await _main_menu_text(message.from_user.id)

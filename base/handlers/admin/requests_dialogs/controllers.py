@@ -28,9 +28,11 @@ async def requests_getter(dialog_manager: DialogManager, **kwargs):
             'user_id': request['user_id']
         })
     if not requests_list:
-        return {'requests': [], 'photo': None}
+        return {'requests': [], 'photo': None, 'total': 0, 'current': 0}
     data = {
         'requests': requests_list,
+        'total': len(requests_list),
+        'current': current_page + 1,
         'photo': None if not requests_list[current_page]['photo_id'] else MediaAttachment(
             type=ContentType.PHOTO,
             file_id=MediaId(requests_list[current_page]['photo_id'])
@@ -48,6 +50,14 @@ async def request_action(callback: CallbackQuery, radio: ManagedRadio, dialog_ma
         return
     if status == 'approved':
         await vars.database.upsert_request(user_id, datetime.now(), 'approved')
+        try:
+            await vars.bot.send_message(
+                user_id,
+                '✅ <b>Заявка одобрена!</b>\n\nВаша анкета поставлена в очередь и скоро появится в канале @repetitor_msc.',
+                parse_mode='HTML'
+            )
+        except Exception:
+            pass
     elif status == 'declined':
         await vars.database.upsert_request(user_id, datetime.now(), 'rejected')
         await dialog_manager.switch_to(RequestsStates.reject_reason)
@@ -55,7 +65,9 @@ async def request_action(callback: CallbackQuery, radio: ManagedRadio, dialog_ma
 
 async def back_to_main(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
     await dialog_manager.done()
-    await callback.message.answer('Выберите действие', reply_markup=admin_markups.main_kb)
+    from base.handlers.admin.base import _admin_menu_text
+    text = await _admin_menu_text()
+    await callback.message.answer(text, reply_markup=admin_markups.main_kb, parse_mode='HTML')
 
 
 async def reject_reason_success(callback: CallbackQuery, input: TextInput, dialog_manager: DialogManager, reason: str):

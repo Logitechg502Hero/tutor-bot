@@ -20,37 +20,35 @@ class Database:
         logger.info('Database initialized')
 
     async def _db_init(self):
-        await self._conn.executescript('''
-            CREATE TABLE IF NOT EXISTS admins (
-                admin_id INTEGER
-            );
-            CREATE TABLE IF NOT EXISTS users (
+        tables = [
+            'CREATE TABLE IF NOT EXISTS admins (admin_id INTEGER)',
+            '''CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
                 role TEXT,
                 created_at TEXT DEFAULT (datetime('now'))
-            );
-            CREATE TABLE IF NOT EXISTS tutors (
+            )''',
+            '''CREATE TABLE IF NOT EXISTS tutors (
                 user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
                 name TEXT, age INTEGER, photo_file_id TEXT, subject TEXT,
                 experience INTEGER, info TEXT, contacts TEXT, price REAL
-            );
-            CREATE TABLE IF NOT EXISTS tutees (
+            )''',
+            '''CREATE TABLE IF NOT EXISTS tutees (
                 user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
                 name TEXT, age INTEGER, subject TEXT, place TEXT,
                 target TEXT, contacts TEXT, price REAL
-            );
-            CREATE TABLE IF NOT EXISTS requests (
+            )''',
+            '''CREATE TABLE IF NOT EXISTS requests (
                 user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
                 created_at TEXT DEFAULT (datetime('now')),
                 status TEXT
-            );
-            CREATE TABLE IF NOT EXISTS scheduled_posts (
+            )''',
+            '''CREATE TABLE IF NOT EXISTS scheduled_posts (
                 post_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_date TEXT,
                 user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
                 status TEXT
-            );
-            CREATE TABLE IF NOT EXISTS reviews (
+            )''',
+            '''CREATE TABLE IF NOT EXISTS reviews (
                 review_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tutor_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
                 reviewer_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
@@ -58,16 +56,21 @@ class Database:
                 comment TEXT,
                 created_at TEXT DEFAULT (datetime('now')),
                 UNIQUE(tutor_id, reviewer_id)
-            );
-            CREATE TABLE IF NOT EXISTS profile_views (
+            )''',
+            '''CREATE TABLE IF NOT EXISTS profile_views (
                 tutor_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
                 viewed_at TEXT DEFAULT (datetime('now'))
-            );
-        ''')
-        for sql in [
+            )''',
+        ]
+        for sql in tables:
+            await self._conn.execute(sql)
+        await self._conn.commit()
+
+        migrations = [
             "ALTER TABLE tutors ADD COLUMN photo_file_id TEXT",
             "ALTER TABLE users ADD COLUMN created_at TEXT DEFAULT (datetime('now'))",
-        ]:
+        ]
+        for sql in migrations:
             try:
                 await self._conn.execute(sql)
                 await self._conn.commit()
@@ -155,6 +158,13 @@ class Database:
         cur = await self._conn.execute('SELECT user_id, role FROM users WHERE user_id = ?', (user_id,))
         row = await cur.fetchone()
         return dict(row) if row else None
+
+    async def get_users_by_role(self, role: str = None) -> list[dict]:
+        if role:
+            cur = await self._conn.execute('SELECT user_id FROM users WHERE role = ?', (role,))
+        else:
+            cur = await self._conn.execute('SELECT user_id FROM users')
+        return [dict(row) for row in await cur.fetchall()]
 
     _ALLOWED_FIELDS = {'name', 'age', 'photo_file_id', 'subject', 'experience', 'info', 'contacts', 'price', 'place', 'target'}
 

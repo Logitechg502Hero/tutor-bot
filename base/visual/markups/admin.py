@@ -14,10 +14,11 @@ main_menu_kb = InlineKeyboardMarkup(inline_keyboard=[
     ])
 
 main_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [requests_btn],
-    [find_user_btn],
-    [user_mode_btn]
-    ])
+    [InlineKeyboardButton(text='📋 Заявки на модерацию', callback_data='requests')],
+    [InlineKeyboardButton(text='🔍 Найти пользователя', callback_data='findUser')],
+    [InlineKeyboardButton(text='📢 Рассылка', callback_data='broadcast')],
+    [InlineKeyboardButton(text='👤 Режим пользователя', callback_data='userMode')],
+])
 
 
 def make_user_kb(user_id: int):

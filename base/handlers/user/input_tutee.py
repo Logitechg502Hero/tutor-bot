@@ -11,12 +11,13 @@ import vars
 
 
 router = Router()
+p = user_texts.progress_tutee
 
 
 @router.callback_query(F.data == 'student')
 async def input_role_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(user_texts.tutee_onboarding_text)
-    await callback.message.answer(user_texts.input_name_text)
+    await callback.message.answer(p['name'] + user_texts.input_name_text, reply_markup=user_markups.cancel_kb, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_name)
     await callback.answer(show_alert=False)
 
@@ -24,7 +25,7 @@ async def input_role_handler(callback: CallbackQuery, state: FSMContext):
 @router.message(UserStates.tutee_input_name, F.text)
 async def input_name_handler(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
-    await message.answer(user_texts.tutee_input_age)
+    await message.answer(p['age'] + user_texts.tutee_input_age, reply_markup=user_markups.cancel_kb, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_age)
 
 
@@ -34,7 +35,7 @@ async def input_age_handler(message: Message, state: FSMContext):
         await message.answer(user_texts.invalid_age_text)
         return
     await state.update_data(age=int(message.text))
-    await message.answer(user_texts.tutee_input_subject, parse_mode='HTML')
+    await message.answer(p['subject'] + user_texts.tutee_input_subject, reply_markup=user_markups.cancel_kb, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_subject)
 
 
@@ -42,21 +43,21 @@ async def input_age_handler(message: Message, state: FSMContext):
 async def input_subject_handler(message: Message, state: FSMContext):
     subject = ', '.join(split.split_subject(message.text))
     await state.update_data(subject=subject)
-    await message.answer(user_texts.tutee_input_place)
+    await message.answer(p['place'] + user_texts.tutee_input_place, reply_markup=user_markups.cancel_kb, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_place)
 
 
 @router.message(UserStates.tutee_input_place, F.text)
 async def input_place_handler(message: Message, state: FSMContext):
     await state.update_data(place=message.text)
-    await message.answer(user_texts.tutee_input_target)
+    await message.answer(p['target'] + user_texts.tutee_input_target, reply_markup=user_markups.cancel_kb, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_target)
 
 
 @router.message(UserStates.tutee_input_target, F.text)
 async def input_target_handler(message: Message, state: FSMContext):
     await state.update_data(target=message.text)
-    await message.answer(user_texts.tutee_input_price)
+    await message.answer(p['price'] + user_texts.tutee_input_price, reply_markup=user_markups.cancel_kb, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_price)
 
 
@@ -66,7 +67,7 @@ async def input_price_handler(message: Message, state: FSMContext):
         await message.answer(user_texts.invalid_price_text)
         return
     await state.update_data(price=float(message.text))
-    await message.answer(user_texts.input_contacts_text, parse_mode='HTML')
+    await message.answer(user_texts.input_contacts_text, reply_markup=user_markups.cancel_kb, parse_mode='HTML')
     await state.set_state(UserStates.tutee_input_contacts)
 
 
@@ -84,5 +85,5 @@ async def input_contacts_handler(message: Message, state: FSMContext):
         contacts=message.text,
         price=data['price']
     )
-    await message.answer(user_texts.questionnaire_filled_text, reply_markup=user_markups.after_registration_kb)
+    await message.answer(user_texts.questionnaire_filled_text, reply_markup=user_markups.after_registration_kb, parse_mode='HTML')
     await state.clear()
