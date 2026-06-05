@@ -16,6 +16,7 @@ tutor_btn = InlineKeyboardButton(text='👨‍🏫 Я репетитор', callb
 student_btn = InlineKeyboardButton(text='🎓 Я ученик', callback_data='student')
 
 want_to_put_request_btn = InlineKeyboardButton(text='📤 Отправить заявку', callback_data='putRequest')
+confirm_request_btn = InlineKeyboardButton(text='✅ Подтвердить и отправить', callback_data='confirmRequest')
 paid_link_confirm_btn = InlineKeyboardButton(text='✅ Я оплатил — отправить скриншот', callback_data='paidLink')
 cancel_payment_btn = InlineKeyboardButton(text='🗑 Убрать ссылку и подать бесплатно', callback_data='cancel')
 
@@ -70,6 +71,11 @@ paid_link_kb = InlineKeyboardMarkup(inline_keyboard=[
 
 put_request_kb = InlineKeyboardMarkup(inline_keyboard=[
     [want_to_put_request_btn],
+])
+
+confirm_request_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [confirm_request_btn],
+    [cancel_btn],
 ])
 
 cancel_kb = InlineKeyboardMarkup(inline_keyboard=[

@@ -2,6 +2,7 @@ import re
 
 
 MIN_AGE = 18
+TUTEE_MIN_AGE = 6
 MAX_AGE = 70
 MIN_PRICE = 100
 MIN_INFO_LENGTH = 50
@@ -67,8 +68,8 @@ def check_tutee(data: dict, admin: str) -> tuple[bool, str, bool]:
         return False, 'Имя не заполнено', False
     if not data.get('age'):
         return False, 'Возраст не указан', False
-    if not (MIN_AGE <= int(data['age']) <= MAX_AGE):
-        return False, f'Возраст должен быть от {MIN_AGE} до {MAX_AGE} лет', False
+    if not (TUTEE_MIN_AGE <= int(data['age']) <= MAX_AGE):
+        return False, f'Возраст должен быть от {TUTEE_MIN_AGE} до {MAX_AGE} лет', False
     if not data.get('subject'):
         return False, 'Предмет не указан', False
     if not data.get('place'):

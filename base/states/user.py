@@ -22,4 +22,5 @@ class UserStates(StatesGroup):
     tutee_input_price = State()
     tutee_input_contacts = State()
 
+    confirm_request = State()
     awaiting_payment_screenshot = State()

@@ -1,7 +1,5 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from asyncio import AbstractEventLoop
-
 from datetime import datetime, timedelta
 
 from aiogram import Bot
@@ -16,12 +14,11 @@ from logger_config import logger
 
 
 class PostScheduler:
-    def __init__(self, database: Database, bot: Bot, chat_id: int, loop: AbstractEventLoop):
+    def __init__(self, database: Database, bot: Bot, chat_id: int):
         self._db = database
         self._bot = bot
         self.chat_id = chat_id
-        self.loop = loop
-        self.scheduler = AsyncIOScheduler(event_loop=self.loop)
+        self.scheduler = AsyncIOScheduler()
         self.scheduler.add_job(self._approved_post_checker, 'cron', hour=12, minute=0)
         self.scheduler.add_job(self._approved_post_checker, 'cron', hour=19, minute=0)
         self.scheduler.add_job(self._check_users_for_new_requests, 'interval', minutes=10)
@@ -77,7 +74,7 @@ class PostScheduler:
         for request in requests:
             date = datetime.fromisoformat(request['created_at'])
             if now - date <= timedelta(days=7):
-                print(now - date)
+                logger.debug(f'Time since last request: {now - date}')
                 continue
             logger.info(f'Sending want_to_put_request message to user {request["user_id"]}')
             await self.send_want_to_put_request_message(request['user_id'])

@@ -2,6 +2,8 @@ from aiogram import Router, F, Bot
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
+from datetime import datetime
+
 import utils.validate as validate
 import utils.split as split
 
@@ -80,7 +82,18 @@ async def change_value_handler(message: Message, state: FSMContext, bot: Bot):
     if field == 'photo_path':
         value = message.photo[-1].file_id
 
-    vars.database.update_user(message.from_user.id, field, value, role)
+    user_id = message.from_user.id
+    vars.database.update_user(user_id, field, value, role)
 
-    await message.answer(user_texts.change_success_text, reply_markup=user_markups.main_kb)
+    repost = False
+    for status in ('finished', 'approved'):
+        if vars.database.get_request(user_id, status):
+            vars.database.upsert_request(user_id, datetime.now(), 'pending')
+            repost = True
+            break
+
+    if repost:
+        await message.answer('Профиль обновлён. Заявка отправлена на повторную публикацию.', reply_markup=user_markups.main_kb)
+    else:
+        await message.answer(user_texts.change_success_text, reply_markup=user_markups.main_kb)
     await state.clear()

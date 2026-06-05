@@ -151,7 +151,11 @@ class Database:
         cur = self._session.execute('SELECT user_id, role FROM users')
         return [dict(row) for row in cur.fetchall()]
 
+    _ALLOWED_FIELDS = {'name', 'age', 'photo_path', 'subject', 'experience', 'info', 'contacts', 'price', 'place', 'target'}
+
     def update_user(self, user_id: int, field: str, value: Any, role: str):
+        if field not in self._ALLOWED_FIELDS:
+            raise ValueError(f'Invalid field: {field}')
         table = 'tutors' if role == 'tutor' else 'tutees'
         self._session.execute(f'UPDATE {table} SET {field} = ? WHERE user_id = ?', (value, user_id))
         self._session.commit()

@@ -59,10 +59,6 @@ async def main_menu_handler(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'putRequest')
 async def put_request_handler(callback: CallbackQuery, state: FSMContext):
-    try:
-        await callback.message.delete()
-    except Exception as e:
-        logger.error(f'Error deleting message after putRequest: {e}')
     user_id = callback.from_user.id
     user = vars.database.get_user(user_id)
     if user['role'] == 'tutor':
@@ -70,11 +66,27 @@ async def put_request_handler(callback: CallbackQuery, state: FSMContext):
     else:
         user_data = vars.database.get_tutee_data(user_id)
     approved, reason, has_link = auto_moderator.moderate(user, user_data, vars.ADMIN_USERNAME)
-    if approved:
-        vars.database.upsert_request(user_id, datetime.now(), 'approved')
-        await callback.message.answer('Заявка принята! Скоро ваша анкета будет опубликована.', reply_markup=user_markups.main_kb)
-        logger.info(f'Request auto-approved for user {user_id}')
-    elif has_link:
+    if not approved and not has_link:
+        await callback.message.answer(user_texts.request_rejected_text.format(reason=reason), reply_markup=user_markups.main_kb)
+        logger.info(f'Request rejected for user {user_id}: {reason}')
+        await callback.answer(show_alert=False)
+        return
+    preview_text = user_text_utils.user_questionnaire_text(user, user_data)
+    await state.update_data(approved=approved, has_link=has_link)
+    await state.set_state(UserStates.confirm_request)
+    await callback.message.answer(
+        f'Так будет выглядеть ваша анкета в канале:\n\n{preview_text}\n\nПодтвердить публикацию?',
+        reply_markup=user_markups.confirm_request_kb
+    )
+    await callback.answer(show_alert=False)
+
+
+@router.callback_query(UserStates.confirm_request, F.data == 'confirmRequest')
+async def confirm_request_handler(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    data = await state.get_data()
+    await state.clear()
+    if data.get('has_link'):
         await state.set_state(UserStates.awaiting_payment_screenshot)
         await callback.message.answer(
             f'В вашей анкете есть ссылка на внешний ресурс.\n\n'
@@ -87,9 +99,9 @@ async def put_request_handler(callback: CallbackQuery, state: FSMContext):
         )
         logger.info(f'Payment requested from user {user_id} for external link')
     else:
-        vars.database.upsert_request(user_id, datetime.now(), 'rejected')
-        await callback.message.answer(user_texts.request_rejected_text.format(reason=reason), reply_markup=user_markups.main_kb)
-        logger.info(f'Request auto-rejected for user {user_id}: {reason}')
+        vars.database.upsert_request(user_id, datetime.now(), 'approved')
+        await callback.message.answer('Заявка принята! Скоро ваша анкета будет опубликована.', reply_markup=user_markups.main_kb)
+        logger.info(f'Request approved for user {user_id}')
     await callback.answer(show_alert=False)
 
 
@@ -107,8 +119,7 @@ async def payment_screenshot_handler(message: Message, state: FSMContext):
     await state.clear()
     user_id = message.from_user.id
     username = f'@{message.from_user.username}' if message.from_user.username else str(user_id)
-    admins = vars.database.get_admins()
-    for admin_id in admins:
+    for admin_id in vars.admin_ids:
         await vars.bot.send_photo(
             admin_id,
             message.photo[-1].file_id,
