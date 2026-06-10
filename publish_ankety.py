@@ -78,4 +78,9 @@ async def main():
             await asyncio.sleep(30)
 
 
-asyncio.run(main())
+async def publisher_task():
+    await main()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

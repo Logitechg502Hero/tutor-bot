@@ -10,6 +10,7 @@ from base.handlers.user import router as user_router
 from base.handlers.admin import router as admin_router
 from dashboard import start_dashboard
 from logger_config import logger
+from publish_ankety import publisher_task
 
 
 async def main():
@@ -19,6 +20,7 @@ async def main():
     vars.post_scheduler = PostScheduler(vars.database, vars.bot, vars.CHAT_ID)
 
     start_dashboard()
+    asyncio.create_task(publisher_task())
 
     dp = Dispatcher()
     dp.message.filter(F.chat.type == ChatType.PRIVATE)
