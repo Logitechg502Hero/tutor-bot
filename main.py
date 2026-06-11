@@ -77,6 +77,15 @@ async def cmd_sendnow(message: Message):
     await message.answer(f'Результат: {result}')
 
 
+@health_router.message(Command('archivepublish'))
+async def cmd_archive_publish(message: Message):
+    """Публикует следующую анкету из архива прямо сейчас (не ждёт 12/19)."""
+    from publish_ankety import publish_one_now
+    await message.answer('⏳ Публикую анкету из архива...')
+    result = await publish_one_now()
+    await message.answer(result)
+
+
 async def main():
     await vars.database.initialize()
     vars.admin_ids = set(await vars.database.get_admins())
