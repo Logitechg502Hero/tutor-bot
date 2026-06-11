@@ -1,9 +1,11 @@
 import aiosqlite
+import os
 from typing import Any
 from datetime import datetime
 from logger_config import logger
 
-DB_PATH = 'tutor_bot.db'
+# DATA_DIR — путь к Railway Volume. Если не задан, пишем рядом (сбрасывается при редеплое).
+DB_PATH = os.path.join(os.getenv('DATA_DIR', '.'), 'tutor_bot.db')
 
 
 class Database:

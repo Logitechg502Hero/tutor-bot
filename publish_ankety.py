@@ -2,15 +2,10 @@ import asyncio
 import json
 import os
 from datetime import datetime, timezone, timedelta
-from telethon import TelegramClient
-from telethon.sessions import StringSession
 
-API_ID = int(os.environ["TG_API_ID"])
-API_HASH = os.environ["TG_API_HASH"]
-SESSION_STRING = os.environ["SESSION_STRING"]
 SOURCE_CHAT_ID = -4712837022
 TARGET_CHANNEL = "@repetitor_msc"
-QUEUE_FILE = "ankety_queue.json"
+QUEUE_FILE = os.path.join(os.getenv('DATA_DIR', '.'), "ankety_queue.json")
 NOTICE = "\n\n📌 Анкета из архива. Актуальность уточните напрямую у автора."
 MSK = timezone(timedelta(hours=3))
 PUBLISH_HOURS = {12, 19}
@@ -53,6 +48,12 @@ async def publish_next(client, queue):
 
 
 async def main():
+    # Импорт и креды — внутри функции, чтобы отсутствие TG_API_* не роняло весь бот при импорте
+    from telethon import TelegramClient
+    from telethon.sessions import StringSession
+    API_ID = int(os.environ["TG_API_ID"])
+    API_HASH = os.environ["TG_API_HASH"]
+    SESSION_STRING = os.environ["SESSION_STRING"]
     async with TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH) as client:
         if not os.path.exists(QUEUE_FILE):
             queue = await build_queue(client)
@@ -79,7 +80,15 @@ async def main():
 
 
 async def publisher_task():
-    await main()
+    # Архивный публикатор включается только если заданы Telegram-креды.
+    # Иначе тихо выключается — основной бот при этом работает.
+    if not all(os.getenv(k) for k in ('TG_API_ID', 'TG_API_HASH', 'SESSION_STRING')):
+        print('[publisher] TG_API_ID/TG_API_HASH/SESSION_STRING не заданы — архивный публикатор выключен')
+        return
+    try:
+        await main()
+    except Exception as e:
+        print(f'[publisher] остановлен из-за ошибки: {e}')
 
 
 if __name__ == "__main__":

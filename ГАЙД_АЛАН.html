@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 720px; margin: 40px auto; color: #1a1a1a; font-size: 15px; line-height: 1.7; }
+  h1 { font-size: 24px; border-bottom: 3px solid #2b5fec; padding-bottom: 10px; color: #2b5fec; }
+  h2 { font-size: 18px; color: #2b5fec; margin-top: 32px; border-left: 4px solid #2b5fec; padding-left: 10px; }
+  code { background: #f0f4ff; padding: 2px 7px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #c0392b; }
+  pre { background: #f0f4ff; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  th { background: #2b5fec; color: white; padding: 9px 14px; text-align: left; font-size: 14px; }
+  td { padding: 8px 14px; border-bottom: 1px solid #e8edf5; font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  .meta { background: #f0f4ff; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; font-size: 14px; }
+  .meta strong { color: #2b5fec; }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 28px 0; }
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  strong { color: #1a1a1a; }
+</style>
+</head>
+<body>
+
+<h1>Бот @repetitor_msc — гайд для администратора</h1>
+
+<div class="meta">
+  <strong>Бот:</strong> @repetitor_msc &nbsp;|&nbsp;
+  <strong>Канал:</strong> @repetitor_msc<br>
+  <strong>Пароль входа в админку:</strong> <code>pass</code><br>
+  <strong>Дашборд:</strong> логин <code>admin</code>, пароль <code>changeme</code>
+</div>
+
+<h2>Шаг 1 — Стать администратором</h2>
+<p>Открой бота в Telegram и напиши один раз:</p>
+<pre>/admin pass</pre>
+<p>Бот покажет панель управления. Потом просто <code>/start</code>.</p>
+<hr>
+
+<h2>Шаг 2 — Главный экран</h2>
+<pre>📊 Панель управления
+
+🧑‍🏫 Репетиторов: 12
+👨‍🎓 Учеников: 8
+⏳ На модерации: 3
+✅ Опубликовано за 7 дней: 5</pre>
+<table>
+  <tr><th>Кнопка</th><th>Что делает</th></tr>
+  <tr><td>📋 Заявки на модерацию</td><td>Смотришь и одобряешь/отклоняешь анкеты</td></tr>
+  <tr><td>🔍 Найти пользователя</td><td>Ищешь любого по Telegram ID</td></tr>
+  <tr><td>📢 Рассылка</td><td>Пишешь сообщение всем пользователям</td></tr>
+  <tr><td>👤 Режим пользователя</td><td>Видишь бота глазами обычного пользователя</td></tr>
+</table>
+<hr>
+
+<h2>Шаг 3 — Модерация заявок</h2>
+<p>Нажми <strong>📋 Заявки на модерацию</strong>. Бот показывает анкету: фото, имя, предмет, опыт, описание, контакты, цена. Вверху счётчик: <strong>"Заявка 2 из 5"</strong>.</p>
+<ul>
+  <li><strong>Одобрить</strong> → анкета выйдет в канал в 12:00 или 19:00. Пользователь получит уведомление ✅</li>
+  <li><strong>Отказать</strong> → бот попросит причину → пользователь получит сообщение с причиной ❌</li>
+  <li>Листать анкеты: кнопки ◀️ ▶️</li>
+</ul>
+<p><strong>Автоматическое одобрение:</strong> если в анкете нет ссылок — бот одобряет сам, без тебя.</p>
+<p><strong>Если пользователь добавил ссылку (300 ₽):</strong> он платит на +79857770845 (Тинькофф) и присылает скриншот. Скриншот придёт тебе в личку. Проверь перевод → зайди в Заявки → одобри вручную.</p>
+<hr>
+
+<h2>Шаг 4 — Найти пользователя</h2>
+<p>Нажми <strong>🔍 Найти пользователя</strong> → введи Telegram ID (числовой, например <code>123456789</code>).</p>
+<ul>
+  <li><strong>Добавить пост</strong> — запланировать публикацию в конкретное время</li>
+  <li><strong>Удалить пользователя</strong> — удалить спам-аккаунт</li>
+</ul>
+<p>Чтобы узнать ID пользователя — пусть напишет боту <code>/id</code>.</p>
+<hr>
+
+<h2>Шаг 5 — Платные посты</h2>
+<p>Пользователь нажимает <strong>"💰 Купить посты"</strong> → бот говорит написать @Ts_alan. Ты договариваешься, получаешь деньги, затем:</p>
+<ol>
+  <li>Нажми <strong>🔍 Найти пользователя</strong> → введи его ID</li>
+  <li>Нажми <strong>Добавить пост</strong></li>
+  <li>Введи дату и время: <code>15.06.2026 18:00</code></li>
+  <li>Бот опубликует анкету автоматически в это время</li>
+</ol>
+<hr>
+
+<h2>Шаг 6 — Рассылка</h2>
+<p>Нажми <strong>📢 Рассылка</strong> → выбери аудиторию:</p>
+<ul>
+  <li>👥 Всем — и репетиторам, и ученикам</li>
+  <li>🧑‍🏫 Только репетиторам</li>
+  <li>🎓 Только ученикам</li>
+</ul>
+<p>Напиши текст → бот покажет превью и количество → нажми <strong>✅ Отправить</strong>.<br>
+После рассылки покажет: <em>"Отправлено: 20 / Ошибок: 1"</em>.</p>
+<hr>
+
+<h2>Шаг 7 — Дашборд (веб-панель)</h2>
+<p>Открывается в браузере. Ссылку берёшь в Railway: Settings → Networking.</p>
+<p>Войти: логин <code>admin</code>, пароль <code>changeme</code></p>
+<p>Видишь: карточки со статистикой + таблицу последних пользователей. Обновляется каждые 60 секунд.</p>
+<hr>
+
+<h2>Автоматика бота (без тебя)</h2>
+<table>
+  <tr><th>Действие</th><th>Когда</th></tr>
+  <tr><td>Публикует одобренные анкеты в канал</td><td>Каждый день в 12:00 и 19:00</td></tr>
+  <tr><td>Напоминает пользователям обновить анкету</td><td>Через 7 дней после последней публикации</td></tr>
+  <tr><td>Присылает репетиторам статистику просмотров</td><td>Каждое воскресенье в 18:00</td></tr>
+  <tr><td>Публикует платные посты</td><td>В назначенное тобой время</td></tr>
+</table>
+<hr>
+
+<h2>Частые проблемы</h2>
+<p><strong>Бот не отвечает</strong><br>
+Railway → Deployments → если красная ошибка → нажми Redeploy.</p>
+<p><strong>Анкета не выходит в канал</strong><br>
+Зайди в Заявки — возможно ждёт одобрения. Одобри вручную.</p>
+<p><strong>Нужно опубликовать срочно прямо сейчас</strong><br>
+Найди пользователя → Добавить пост → поставь время на ближайшую минуту.</p>
+<p><strong>Пользователь застрял в анкете</strong><br>
+Пусть нажмёт ❌ Отмена или напишет <code>/start</code>.</p>
+
+</body>
+</html>

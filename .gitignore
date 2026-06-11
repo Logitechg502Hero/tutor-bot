@@ -7,3 +7,5 @@ info.log
 bot.log
 static/
 .env
+ankety_queue.json
+*.session
