@@ -1,11 +1,15 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.util import astimezone
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from aiogram import Bot
 from database import Database
 from base.visual.texts import user as user_texts
 from base.visual.markups import user as user_markups
 from utils import user_text as util_user_text
 from logger_config import logger
+
+MSK = ZoneInfo('Europe/Moscow')
 
 
 class PostScheduler:
@@ -14,21 +18,26 @@ class PostScheduler:
         self._db = database
         self._bot = bot
         self.chat_id = chat_id
-        self.scheduler = AsyncIOScheduler()
+        self._admin_id: int | None = None  # заполняется снаружи для уведомлений
+        self.scheduler = AsyncIOScheduler(timezone=MSK)
         self.scheduler.add_job(self._approved_post_checker, 'cron', hour=12, minute=0)
         self.scheduler.add_job(self._approved_post_checker, 'cron', hour=19, minute=0)
         self.scheduler.add_job(self._check_users_for_new_requests, 'interval', minutes=10)
         self.scheduler.add_job(self._check_scheduled_posts, 'interval', minutes=1, next_run_time=datetime.now())
         self.scheduler.add_job(self._weekly_stats, 'cron', day_of_week='sun', hour=18, minute=0)
         self.scheduler.start()
-        logger.info('Post scheduler initialized and started')
+        logger.info('Post scheduler initialized and started (timezone: Europe/Moscow)')
 
-    async def _approved_post_checker(self):
+    async def _send_one_approved(self) -> str:
+        """Берёт первую approved-заявку, публикует, возвращает результат строкой."""
         requests = await self._db.get_requests_by_status(statuses=['approved'])
         if not requests:
-            return
+            return 'нет одобренных заявок'
         user_id = requests[0]['user_id']
         user = await self._db.get_user(user_id)
+        if not user:
+            await self._db.upsert_request(user_id, datetime.now(), 'rejected')
+            return f'user {user_id} не найден — удалён из очереди'
         if user['role'] == 'tutor':
             user_data = await self._db.get_tutor_data(user_id)
         else:
@@ -42,9 +51,24 @@ class PostScheduler:
             else:
                 await self._bot.send_message(self.chat_id, user_text)
             await self._db.upsert_request(user_id, datetime.now(), 'finished')
-            logger.info(f'Post sent in chat for user {user_id}')
+            logger.info(f'Post sent in channel for user {user_id}')
+            if self._admin_id:
+                await self._bot.send_message(
+                    self._admin_id,
+                    f'✅ Анкета @{user_data.get("contacts","?")[:30]} опубликована в канале.'
+                )
+            return f'ok, user {user_id}'
         except Exception as e:
             logger.error(f'Error sending post for user {user_id}: {e}')
+            if self._admin_id:
+                await self._bot.send_message(
+                    self._admin_id,
+                    f'❌ Ошибка публикации анкеты user {user_id}:\n{e}'
+                )
+            return f'ошибка: {e}'
+
+    async def _approved_post_checker(self):
+        await self._send_one_approved()
 
     async def send_want_to_put_request_message(self, user_id: int):
         await self._bot.send_message(

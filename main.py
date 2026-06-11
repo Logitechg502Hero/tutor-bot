@@ -39,11 +39,65 @@ async def cmd_ping(message: Message):
     )
 
 
+@health_router.message(Command('dbstatus'))
+async def cmd_dbstatus(message: Message):
+    """Показывает состояние заявок в БД — сколько pending/approved/finished."""
+    try:
+        from database import DB_PATH
+        import aiosqlite
+        async with aiosqlite.connect(DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            rows = {}
+            for s in ('pending', 'approved', 'finished', 'rejected'):
+                cur = await db.execute("SELECT COUNT(*) FROM requests WHERE status=?", (s,))
+                rows[s] = (await cur.fetchone())[0]
+            cur = await db.execute("SELECT COUNT(*) FROM users")
+            total_users = (await cur.fetchone())[0]
+        await message.answer(
+            f"📊 <b>Состояние БД</b>\n\n"
+            f"Пользователей: {total_users}\n"
+            f"Ожидают модерации: {rows['pending']}\n"
+            f"Одобрено (в очереди): {rows['approved']}\n"
+            f"Опубликовано всего: {rows['finished']}\n"
+            f"Отклонено: {rows['rejected']}",
+            parse_mode='HTML'
+        )
+    except Exception as e:
+        await message.answer(f'Ошибка: {e}')
+
+
+@health_router.message(Command('sendnow'))
+async def cmd_sendnow(message: Message):
+    """Принудительно публикует следующую одобренную анкету прямо сейчас."""
+    if vars.post_scheduler is None:
+        await message.answer('Scheduler ещё не инициализирован.')
+        return
+    await message.answer('⏳ Публикую следующую одобренную анкету...')
+    result = await vars.post_scheduler._send_one_approved()
+    await message.answer(f'Результат: {result}')
+
+
 async def main():
     await vars.database.initialize()
     vars.admin_ids = set(await vars.database.get_admins())
     vars.main_loop = asyncio.get_running_loop()
     vars.post_scheduler = PostScheduler(vars.database, vars.bot, vars.CHAT_ID)
+
+    # Сообщаем о старте всем admin-ам (помогает понять, что бот перезапустился)
+    for admin_id in vars.admin_ids:
+        try:
+            await vars.bot.send_message(
+                admin_id,
+                '🟢 <b>Бот запущен</b>\n\n'
+                'Команды диагностики:\n'
+                '/ping — аптайм + статистика\n'
+                '/dbstatus — состояние заявок в БД\n'
+                '/sendnow — опубликовать следующую анкету прямо сейчас',
+                parse_mode='HTML'
+            )
+            vars.post_scheduler._admin_id = admin_id  # последний admin получает уведомления
+        except Exception:
+            pass
 
     start_dashboard()
     asyncio.create_task(publisher_task())
