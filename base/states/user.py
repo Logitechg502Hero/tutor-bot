@@ -27,3 +27,5 @@ class UserStates(StatesGroup):
 
     review_rating = State()
     review_comment = State()
+
+    awaiting_premium_screenshot = State()

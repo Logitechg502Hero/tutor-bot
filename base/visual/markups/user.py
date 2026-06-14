@@ -6,6 +6,8 @@ profile_btn = InlineKeyboardButton(text='📋 Моя анкета', callback_dat
 put_request_btn = InlineKeyboardButton(text='📤 Подать заявку в канал', callback_data='putRequest')
 paid_link_btn_info = InlineKeyboardButton(text='🔗 Опубликовать со ссылкой — 300 ₽', callback_data='paidLinkInfo')
 buy_posts_btn = InlineKeyboardButton(text='💰 Купить посты', callback_data='buyPosts')
+premium_btn = InlineKeyboardButton(text='💎 Продвижение', callback_data='premiumMenu')
+referral_btn = InlineKeyboardButton(text='🔗 Пригласить репетитора', callback_data='myRef')
 
 change_btn = InlineKeyboardButton(text='✏️ Редактировать', callback_data='change')
 main_menu_btn = InlineKeyboardButton(text='🏠 Главное меню', callback_data='mainMenu')
@@ -37,6 +39,8 @@ main_kb = InlineKeyboardMarkup(inline_keyboard=[
     [profile_btn],
     [put_request_btn],
     [paid_link_btn_info],
+    [premium_btn],
+    [referral_btn],
     [buy_posts_btn],
 ])
 
@@ -44,6 +48,8 @@ main_with_admin_kb = InlineKeyboardMarkup(inline_keyboard=[
     [profile_btn],
     [put_request_btn],
     [paid_link_btn_info],
+    [premium_btn],
+    [referral_btn],
     [buy_posts_btn],
     [InlineKeyboardButton(text='🔧 Админ панель', callback_data='adminPanel')],
 ])
@@ -94,6 +100,19 @@ skip_cancel_kb = InlineKeyboardMarkup(inline_keyboard=[
 role_kb = InlineKeyboardMarkup(inline_keyboard=[
     [tutor_btn],
     [student_btn],
+])
+
+
+premium_menu_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='🔄 Учащённые выходы — 200 ₽/мес', callback_data='buyFrequent')],
+    [InlineKeyboardButton(text='📌 Закрепление на 7 дней — 300 ₽', callback_data='buyPin')],
+    [InlineKeyboardButton(text='⚡ Комбо: выходы + закреп — 400 ₽', callback_data='buyCombo')],
+    [InlineKeyboardButton(text='🏠 Главное меню', callback_data='mainMenu')],
+])
+
+premium_pay_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='✅ Я оплатил — прислать скриншот', callback_data='sendPremiumScreenshot')],
+    [InlineKeyboardButton(text='◀️ Назад', callback_data='premiumMenu')],
 ])
 
 

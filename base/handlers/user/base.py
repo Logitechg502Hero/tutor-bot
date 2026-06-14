@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command, StateFilter
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from base.states.user import UserStates
 from base.visual.markups import user as user_markups
@@ -46,11 +46,55 @@ async def cancel_text_handler(message: Message, state: FSMContext):
     await message.answer(text, reply_markup=user_markups.main_kb)
 
 
+async def _process_referral(referrer_id: int, referred_id: int):
+    """Записывает реферал и выдаёт бонусы реферреру при достижении порогов."""
+    added = await vars.database.add_referral(referrer_id, referred_id)
+    if not added:
+        return
+    count = await vars.database.get_referral_count(referrer_id)
+    now = datetime.now()
+    if count == 1:
+        until = now + timedelta(days=30)
+        await vars.database.set_frequent(referrer_id, until)
+        try:
+            await vars.bot.send_message(
+                referrer_id,
+                f'🎁 <b>Бонус за реферала!</b>\n\n'
+                f'Учащённые выходы активированы бесплатно до {until.strftime("%d.%m.%Y")} 🔄',
+                parse_mode='HTML'
+            )
+        except Exception:
+            pass
+    elif count == 3:
+        until = now + timedelta(days=7)
+        await vars.database.set_pin(referrer_id, until)
+        try:
+            await vars.bot.send_message(
+                referrer_id,
+                f'🎁 <b>Бонус за 3 рефералов!</b>\n\n'
+                f'Закрепление анкеты активировано бесплатно до {until.strftime("%d.%m.%Y")} 📌',
+                parse_mode='HTML'
+            )
+        except Exception:
+            pass
+
+
 @router.message(Command('start'))
 async def start_handler(message: Message, state: FSMContext):
     await state.clear()
+    args = message.text.split(maxsplit=1)
+    ref_arg = args[1] if len(args) > 1 else None
+
     user = await vars.database.get_user(message.from_user.id)
     if not user:
+        # Обрабатываем реферальную ссылку до регистрации
+        if ref_arg and ref_arg.startswith('ref_'):
+            try:
+                referrer_id = int(ref_arg[4:])
+                if referrer_id != message.from_user.id:
+                    await _process_referral(referrer_id, message.from_user.id)
+            except ValueError:
+                pass
         await message.answer(user_texts.start_text, parse_mode='HTML')
         await message.answer(user_texts.input_role_text, reply_markup=user_markups.role_kb)
     else:

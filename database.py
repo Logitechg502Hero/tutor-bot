@@ -63,6 +63,19 @@ class Database:
                 tutor_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
                 viewed_at TEXT DEFAULT (datetime('now'))
             )''',
+            '''CREATE TABLE IF NOT EXISTS premium (
+                user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+                frequent_until TEXT,
+                pin_until TEXT,
+                pinned_msg_id INTEGER,
+                channel_msg_id INTEGER,
+                frequent_last_post TEXT
+            )''',
+            '''CREATE TABLE IF NOT EXISTS referrals (
+                referrer_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+                referred_id INTEGER PRIMARY KEY,
+                created_at TEXT DEFAULT (datetime('now'))
+            )''',
         ]
         for sql in tables:
             await self._conn.execute(sql)
@@ -267,6 +280,84 @@ class Database:
             row = await cur.fetchone()
             stats[key] = row[0] or 0
         return stats
+
+    # --- Premium ---
+
+    async def get_premium(self, user_id: int) -> dict | None:
+        cur = await self._conn.execute(
+            'SELECT * FROM premium WHERE user_id = ?', (user_id,)
+        )
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+    async def _upsert_premium(self, user_id: int, **kwargs):
+        existing = await self.get_premium(user_id)
+        if not existing:
+            await self._conn.execute('INSERT INTO premium(user_id) VALUES(?)', (user_id,))
+        sets = ', '.join(f'{k} = ?' for k in kwargs)
+        vals = list(kwargs.values()) + [user_id]
+        await self._conn.execute(f'UPDATE premium SET {sets} WHERE user_id = ?', vals)
+        await self._conn.commit()
+
+    async def set_frequent(self, user_id: int, until: datetime):
+        await self._upsert_premium(user_id, frequent_until=until.isoformat())
+
+    async def set_pin(self, user_id: int, until: datetime):
+        await self._upsert_premium(user_id, pin_until=until.isoformat())
+
+    async def update_channel_msg_id(self, user_id: int, msg_id: int):
+        await self._upsert_premium(user_id, channel_msg_id=msg_id)
+
+    async def update_pinned_msg_id(self, user_id: int, msg_id: int | None):
+        await self._upsert_premium(user_id, pinned_msg_id=msg_id)
+
+    async def update_frequent_last_post(self, user_id: int, dt: datetime):
+        await self._upsert_premium(user_id, frequent_last_post=dt.isoformat())
+
+    async def clear_pin(self, user_id: int):
+        await self._upsert_premium(user_id, pin_until=None, pinned_msg_id=None)
+
+    async def get_active_frequent_users(self) -> list[dict]:
+        cur = await self._conn.execute(
+            "SELECT * FROM premium WHERE frequent_until > datetime('now') "
+            "AND (frequent_last_post IS NULL OR frequent_last_post <= datetime('now', '-3 days'))"
+        )
+        return [dict(row) for row in await cur.fetchall()]
+
+    async def get_expired_pins(self) -> list[dict]:
+        cur = await self._conn.execute(
+            "SELECT * FROM premium WHERE pin_until <= datetime('now') AND pinned_msg_id IS NOT NULL"
+        )
+        return [dict(row) for row in await cur.fetchall()]
+
+    # --- Referrals ---
+
+    async def add_referral(self, referrer_id: int, referred_id: int) -> bool:
+        try:
+            await self._conn.execute(
+                'INSERT OR IGNORE INTO referrals(referrer_id, referred_id) VALUES(?, ?)',
+                (referrer_id, referred_id)
+            )
+            await self._conn.commit()
+            cur = await self._conn.execute('SELECT changes()')
+            row = await cur.fetchone()
+            return row[0] > 0
+        except Exception:
+            return False
+
+    async def get_referral_count(self, referrer_id: int) -> int:
+        cur = await self._conn.execute(
+            'SELECT COUNT(*) FROM referrals WHERE referrer_id = ?', (referrer_id,)
+        )
+        row = await cur.fetchone()
+        return row[0]
+
+    async def get_referrer(self, referred_id: int) -> int | None:
+        cur = await self._conn.execute(
+            'SELECT referrer_id FROM referrals WHERE referred_id = ?', (referred_id,)
+        )
+        row = await cur.fetchone()
+        return row[0] if row else None
 
     async def get_recent_users(self, limit: int = 20):
         cur = await self._conn.execute(
